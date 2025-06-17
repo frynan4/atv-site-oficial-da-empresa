@@ -3,68 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Document</title>
 </head>
 <body>
-    <?php
-    // Configurações do banco de dados
-    $host = "localhost";
-    $user = "root"; // usuário padrão
-    $password = ""; // senha em branco
-    $database = "nome_do_banco"; // nome do banco de dados
+<?php
 
-    // Conectar ao banco
-    $conn = new mysqli($host, $user, $password, $database);
+// Configurações do banco de dados
+$host = 'localhost';
+$user = 'root'; // usuário padrão do XAMPP
+$password = ''; // senha padrão do XAMPP (vazia)
+$database = 'login'; // substitua pelo nome do seu banco de dados
 
-    // Verificar a conexão
-    if ($conn->connect_error) {
-        die("Falha na conexão: " . $conn->connect_error);
-    }
+// Conectar ao banco de dados
+$conn = new mysqli($host, $user, $password, $database);
 
-    // Receber dados do formulário
-    if ($_SERVER["REQUEST_METHOD"] == "POST") {
-        $dados = filter_input_array(INPUT_POST, FILTER_DEFAULT);
+// Verificar conexão
+if ($conn->connect_error) {
+    die("Falha na conexão: " . $conn->connect_error);
+}
 
-        // Verificar se o campo de login foi enviado
-        if (!empty($dados["sendlogin"])) {
-            // Preparar consulta SQL para verificar usuário
-            $query_usuario = "SELECT id, senha FROM usuarios WHERE usuario = ? LIMIT 1";
-            $stmt = $conn->prepare($query_usuario);
-            $stmt->bind_param("s", $dados["usuario"]);
-            $stmt->execute();
-            $resultado = $stmt->get_result();
+// Criptografia de senha (apenas para exemplo/criação de usuários)
+// echo password_hash(123456, PASSWORD_DEFAULT);
 
-            // Verificar se o usuário foi encontrado
-            if ($resultado->num_rows == 1) {
-                // Usuário encontrado, verificar a senha
-                $row_usuario = $resultado->fetch_assoc();
-                if (password_verify($dados["senha_usuario"], $row_usuario["senha"])) {
-                    // Senha correta, redirecionar
-                    session_start();
-                    $_SESSION['ID'] = $row_usuario['id'];
-                    $_SESSION['usuario'] = $dados["usuario"];
+// Receber dados do forms
+$dados = filter_input_array(INPUT_POST, FILTER_DEFAULT);
 
-                    header("Location: dashboard.php"); // Redireciona para a página do painel
-                    exit();
-                } else {
-                    echo "<p style='color:red'>Erro: senha incorreta!</p>";
-                }
-            } else {
-                echo "<p style='color:red'>Erro: usuário não encontrado!</p>";
-            }
+// Acessar o IF quando o usuario clicar no botão de acesso do formulario
+if (!empty($dados["Sendlogin"])) {
+    // Preparar a consulta SQL
+    $query_usuario = "SELECT id, senha FROM usuarios WHERE usuario = ? LIMIT 1";
+    $stmt = $conn->prepare($query_usuario);
+    $stmt->bind_param("s", $dados["usuario"]);
+    $stmt->execute();
+    $resultado = $stmt->get_result();
+    
+    if ($resultado->num_rows == 1) {
+        // Usuário encontrado, verificar senha
+        $row_usuario = $resultado->fetch_assoc();
+        if (md5($dados["senha_usuario"], $row_usuario['senha'])) {
+            // Senha correta - iniciar sessão e redirecionar
+            session_start();
+            $_SESSION['id'] = $row_usuario['id'];
+            $_SESSION['usuario'] = $dados["usuario"];
+            
+            header("Location: dashboard.php"); // redireciona para página restrita
+            exit();
+        } else {
+            echo "<p style='color: red'>Erro: Senha incorreta!</p>";
         }
+    } else {
+        echo "<p style='color: red'>Erro: Usuário não encontrado!</p>";
     }
-    ?>
+}
 
-    <!-- Formulário de login -->
-    <form method="POST" action="">
-        <label for="usuario">Usuário:</label>
-        <input type="text" name="usuario" id="usuario" required><br>
-
-        <label for="senha_usuario">Senha:</label>
-        <input type="password" name="senha_usuario" id="senha_usuario" required><br>
-
-        <input type="submit" name="sendlogin" value="Login">
-    </form>
+?>
 </body>
 </html>
